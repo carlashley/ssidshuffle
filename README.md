@@ -60,12 +60,12 @@ options:
 [jappleseed@infiniteloop]:ssidshuffle #
 [jappleseed@infiniteloop]:ssidshuffle #
 [jappleseed@infiniteloop]:ssidshuffle # ./dist/ssidshuffle -l
-Current SSIDs for interface 'en1'
- 0: 'Dartanian'
- 1: 'Pismo'
- 2: 'Mercury'
- 3: 'Mac Man'
- 4: 'Columbus'
+Current SSIDs for interface 'en1' (in order):
+ 'Dartanian'
+ 'Pismo'
+ 'Mercury'
+ 'Mac Man'
+ 'Columbus'
 [jappleseed@infiniteloop]:ssidshuffle #
 [jappleseed@infiniteloop]:ssidshuffle #
 [jappleseed@infiniteloop]:ssidshuffle #
@@ -102,5 +102,5 @@ Success!
 [jappleseed@infiniteloop]:ssidshuffle #
 [jappleseed@infiniteloop]:ssidshuffle # sudo ./dist/ssidshuffle -i en1 -s Dartanian Pismo Mercury "Mac Man" Columbus Kaleidoscope
 Cannot re-order the specified SSIDs as one or more SSID is not configured.
-SSIDs not configured on the specified interface: 'Kaleidoscope'.
+SSIDs not configured on 'en1': 'Kaleidoscope'.
 ```

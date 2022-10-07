@@ -87,7 +87,7 @@ def reorder_ssids(ssids: Optional[Dict[str, int]] = dict(),
         list_current_ssids(current_ssids=current_ssids, iface=iface)
 
     # Check that all SSIDs being re-ordered have been configured
-    check_all_ssids_exist(ssids=ssids, current_ssids=current_ssids)
+    check_all_ssids_exist(ssids=ssids, current_ssids=current_ssids, iface=iface)
 
     # Check that the wireless interface actually has SSIDs that can be re-ordered
     has_configured_ssids(current_ssids=current_ssids, iface=iface)

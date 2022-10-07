@@ -71,19 +71,23 @@ def get_ssid_ordered_dict(ssids: List[str]) -> OrderedDict:
     return result
 
 
-def check_all_ssids_exist(ssids: Dict[str, int], current_ssids: Dict[str, int]) -> None:
+def check_all_ssids_exist(ssids: Dict[str, int], current_ssids: Dict[str, int], iface: str) -> None:
     """Check's all the provied SSIDs for re-ordering exist in the current set of configured
     SSIDs.
 
     :param ssids: a dictionary with ssid name as the key, and the position (int) as the value
                   to use for ordering the SSID
     :param current_ssids: a dictionary of the current configured SSIDs with ssid name as the
-                          key, and the position (int)"""
+                          key, and the position (int)
+    :param iface: the wireless network interface to reorder SSIDs on; this should be the
+                  BSD name of the interfoace, for example: 'en0'. By default this is not
+                  required as this operation defaults to getting the current wireless
+                  interface"""
     if not all([ssid in current_ssids for ssid, posn in ssids.items()]):
         missing_ssids = ", ".join([f"{s!r}" for s, _ in sorted(ssids.items(), key=lambda x: x[1])
                                    if s not in current_ssids])
         print("Cannot re-order the specified SSIDs as one or more SSID is not configured.", file=sys.stderr)
-        print(f"SSIDs not configured on the specified interface: {missing_ssids}.", file=sys.stderr)
+        print(f"SSIDs not configured on {iface!r}: {missing_ssids}.", file=sys.stderr)
         sys.exit(2)
 
 
@@ -118,10 +122,10 @@ def list_current_ssids(current_ssids: Dict[str, int], iface: str) -> None:
     current_ssids = [ssid for ssid, _ in current_ssids.copy().items()]
 
     if len(current_ssids) > 0:
-        print(f"Current SSIDs for interface {iface!r}")
+        print(f"Current SSIDs for interface {iface!r} (in order):")
 
         for ssid in current_ssids:
-            print(f" {current_ssids.index(ssid)}: {ssid!r}")
+            print(f" {ssid!r}")
 
         sys.exit(0)
     else:
