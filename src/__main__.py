@@ -147,7 +147,8 @@ def arguments() -> None:
       dest="interface",
       metavar="[interface]",
       help=("the wireless network interface, for example: 'en0'; defaults\n"
-            "to the current wirless interface"),
+            "to the current wirless interface when this argument is not\n"
+            "supplied"),
       required=False)
 
     a("-v", "--version",

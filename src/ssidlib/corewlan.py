@@ -121,7 +121,7 @@ def list_current_ssids(current_ssids: Dict[str, int], iface: str) -> None:
         print(f"Current SSIDs for interface {iface!r}")
 
         for ssid in current_ssids:
-            print(f" {current_ssids.index(ssid)}:{ssid}")
+            print(f" {current_ssids.index(ssid)}: {ssid!r}")
 
         sys.exit(0)
     else:

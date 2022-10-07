@@ -35,17 +35,13 @@ SOFTWARE.
 This is provided as is. No support provided.
 
 # Distribution
-There is a Python file in the `src` folder that can be used on Mac systems that have had Python 3 installed.
-
-Note: The Python 3 path is referenced by calling the `#!/usr/bin env python3` shebang, so ensure that the version of Python this shebang points to has the `pyobjc` package installed.
-You can of course do things with `virtualenv` at your leisure.
-
-Alternatively, there are self contained binary bundles in the `./dist` folder for `arm64` and `x86_64` architecture; these can be used _without_ a Python 3 interpreter installed, but there is an added penalty hit as this requires some magical decompression on each run.
+A compressed zipfile is built in the `./dist/` folder, this is built with `#!/usr/bin/env python3` as the interpreter path, this interpreter must be able to import various `pyobjc` packages (`CoreWLAN`, `Foundation`, and `PyObjCTools.Conversion`).
 
 
 # Usage
 ```
-usage: ssidshuffle.py [-h] [-n | -l] [-s, --ssids [[ssid] ...]] [-i [interface]] [-v]
+[jappleseed@infiniteloop]:ssidshuffle # ./dist/ssidshuffle -h
+usage: ssidshuffle [-h] [-n | -l] [-s, --ssids [[ssid] ...]] [-i [interface]] [-v]
 
 A command line utility to quickly re-order SSIDs for a specific wireless network interface.
 
@@ -57,7 +53,54 @@ options:
                         SSID names in the order they need to be re-shuffled into
   -i [interface], --interface [interface]
                         the wireless network interface, for example: 'en0'; defaults
-                        to the current wirless interface
+                        to the current wirless interface when this argument is not
+                        supplied
   -v, --version         show program's version number and exit
-[jappleseed@infiniteloop]: ~#
+[jappleseed@infiniteloop]:ssidshuffle #
+[jappleseed@infiniteloop]:ssidshuffle #
+[jappleseed@infiniteloop]:ssidshuffle #
+[jappleseed@infiniteloop]:ssidshuffle # ./dist/ssidshuffle -l
+Current SSIDs for interface 'en1'
+ 0: 'Dartanian'
+ 1: 'Pismo'
+ 2: 'Mercury'
+ 3: 'Mac Man'
+ 4: 'Columbus'
+[jappleseed@infiniteloop]:ssidshuffle #
+[jappleseed@infiniteloop]:ssidshuffle #
+[jappleseed@infiniteloop]:ssidshuffle #
+[jappleseed@infiniteloop]:ssidshuffle # ./dist/ssidshuffle -n -s Columbus Dartanian Pismo Mercury "Mac Man"
+Old SSID order:
+ 'Dartanian'
+ 'Pismo'
+ 'Mercury'
+ 'Mac Man'
+ 'Columbus'
+New SSID order:
+ 'Columbus'
+ 'Dartanian'
+ 'Pismo'
+ 'Mercury'
+ 'Mac Man'
+[jappleseed@infiniteloop]:ssidshuffle #
+[jappleseed@infiniteloop]:ssidshuffle #
+[jappleseed@infiniteloop]:ssidshuffle #
+[jappleseed@infiniteloop]:ssidshuffle # sudo ./dist/ssidshuffle -s Columbus Dartanian Pismo Mercury "Mac Man"
+Success!
+[jappleseed@infiniteloop]:ssidshuffle #
+[jappleseed@infiniteloop]:ssidshuffle #
+[jappleseed@infiniteloop]:ssidshuffle #
+[jappleseed@infiniteloop]:ssidshuffle # ./dist/ssidshuffle -s Columbus Dartanian Pismo Mercury "Mac Man"
+Error committing change: Error Domain=com.apple.wifi.apple80211API.error Code=-3930 "(null)" - you may need to run this with 'sudo'.
+[jappleseed@infiniteloop]:ssidshuffle #
+[jappleseed@infiniteloop]:ssidshuffle #
+[jappleseed@infiniteloop]:ssidshuffle #
+[jappleseed@infiniteloop]:ssidshuffle # sudo ./dist/ssidshuffle -i en1 -s Dartanian Pismo Mercury "Mac Man" Columbus
+Success!
+[jappleseed@infiniteloop]:ssidshuffle #
+[jappleseed@infiniteloop]:ssidshuffle #
+[jappleseed@infiniteloop]:ssidshuffle #
+[jappleseed@infiniteloop]:ssidshuffle # sudo ./dist/ssidshuffle -i en1 -s Dartanian Pismo Mercury "Mac Man" Columbus Kaleidoscope
+Cannot re-order the specified SSIDs as one or more SSID is not configured.
+SSIDs not configured on the specified interface: 'Kaleidoscope'.
 ```
