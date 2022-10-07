@@ -1,44 +1,33 @@
 #!/bin/zsh
+PYTHON3=$(/usr/bin/which python3)
+SOURCE=./src
+BUILD_DIR=./dist
+BUILD_OUT=./dist/ssidshuffle
 
-NAME=ssidshuffle
-SRC_FILE=./src/${NAME}.py
-ARM_DIST=./dist/arm64
-X86_DIST=./dist/x86_64
-VERSION=$(/usr/bin/awk '/VERSION = / {print $NF}' ${SRC_FILE} | /usr/bin/sed 's/"//g')
-NUITKA=$(which nuitka3)
-
-if [ ! -d ${ARM_DIST} ]; then
-    /bin/mkdir -p {$ARM_DIST}
+if [[ ! -z ${LOCAL_PYTHON} ]]; then
+    echo "Python 3 is required, exiting."
+    exit 1
 fi
 
-if [ ! -d ${X86_DIST} ]; then
-    /bin/mkdir -p ${X86_DIST}
+if [ ! -d ${BUILD_DIR} ]; then
+    /bin/mkdir -p ${BUILD_DIR}
 fi
 
-if [ ! -z {$NUITKA} ]; then
-    eval ${NUITKA} \
-        --follow-imports \
-        --follow-stdlib \
-        --macos-app-name=${NAME} \
-        --macos-app-version=${VERSION} \
-        --macos-target-arch=x86_64 \
-        --standalone \
-        --onefile \
-        --remove-output \
-        -o ./dist/x86_64/${NAME} \
-        ${SRC_FILE}
-
-    eval ${NUITKA} \
-        --follow-imports \
-        --follow-stdlib \
-        --macos-app-name=${NAME} \
-        --macos-app-version=${VERSION} \
-        --macos-target-arch=arm64 \
-        --standalone \
-        --onefile \
-        --remove-output \
-        -o ./dist/arm64/${NAME} \
-        ${SRC_FILE}
+# To provide your own python path, just add '--python=/path/to/python' after './build'
+# For example: ./build.sh --python="/usr/bin/env python3.7"
+# or           ./build.sh --python="/usr/local/munki/python"
+if [[ ! -z ${1} ]]; then
+    DIST_CMD=$(echo /usr/local/bin/python3 -m zipapp ${SOURCE} --compress --output ${BUILD_OUT} --python=\"${1}\")
 else
-    echo "Build tool nuitka3 is missing, please install it."
+    DIST_CMD=$(echo /usr/local/bin/python3 -m zipapp ${SOURCE} --compress --output ${BUILD_OUT} --python=\"${PYTHON3}\")
+fi
+
+# Clean up old file quietly
+/bin/rm ${BUILD_OUT} &> /dev/null
+
+# Build
+eval ${DIST_CMD}
+
+if [[ $? == 0 ]]; then
+    echo "Successfully built ${BUILD_OUT}"
 fi
