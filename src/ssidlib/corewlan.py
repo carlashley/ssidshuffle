@@ -5,7 +5,7 @@ from typing import Any, Callable, List, Optional
 from CoreWLAN import CWConfiguration, CWInterface, CWMutableConfiguration, CWWiFiClient
 from PyObjCTools import Conversion
 
-from .models import InterfaceConnection
+from models.interface import InterfaceConnection
 
 
 def o2p(obj: Any, helper: Optional[Callable] = None) -> Any:
@@ -97,22 +97,35 @@ class WiFiAdapter:
 
     def current_connection(self) -> InterfaceConnection:
         """Get current connection details and return an instance of 'InterfaceConnection'."""
+        # Note: At some point in the future consider breaking out the 'last_preferred_network_joined'
+        #       into its own 'model' in the 'models' folder as this is a 'CWNetworkProfile' object
+        #       which is what other items here return
         ip_monitor = self._interface.ipMonitor()
-
-        data = {"auto_join_history": self._interface.autoJoinHistory(),
+        data = {"aggregate_noise": self._interface.aggregateNoise(),
+                "aggregate_rssi": self._interface.aggregateRSSI(),
+                "airplay_statistics": self._interface.airplayStatistics(),
+                "auto_content_accessing_proxy": self._interface.autoContentAccessingProxy(),
+                "auto_join_history": self._interface.autoJoinHistory(),
+                "awdl_operating_mode": self._interface.awdlOperatingMode(),
+                "available_wlan_channels": list(self._interface.availableWLANChannels()),
                 "bssid": self._interface.bssid(),  # Note, this won't return anything in 10.15+ because location data
                 "busy": self._interface.busy(),
                 "cached_scan_results": list(self._interface.cachedScanResults()),  # Last network scan results
                 "capabilities": o2p(self._interface.capabilities()),
+                "caused_last_wake": self._interface.causedLastWake(),
                 "channel": self._interface.channel(),
                 "channel_band": self._interface.channel(),
+                "configuration": self._interface.configuration(),
+                "country_code": self._interface.countryCode(),
                 "device": self._interface.device(),
-                "device_Attached": self._interface.deviceAttached(),
+                "device_attached": self._interface.deviceAttached(),
                 "eapo_client": self._interface.eapolClient(),
                 "entity_name": self._interface.entityName(),
                 "hardware_address": self._interface.hardwareAddress(),
+                "interface_capabilities": self._interface.interfaceCapabilities(),
                 "interface_mode": self._interface.interfaceMode(),
                 "interface_state": self._interface.interfaceState(),
+                "io_80211_controller_info": o2p(self._interface.IO80211ControllerInfo()),
                 "ipv4_addresses": o2p(ip_monitor.ipv4Addresses()),
                 "ipv4_available": ip_monitor.ipv4Available(),
                 "ipv4_global_setup_config": o2p(ip_monitor.ipv4GlobalSetupConfig()),
