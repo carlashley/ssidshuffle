@@ -3,7 +3,7 @@ Re-order SSIDs connected on a specific wireless network interface.
 Inspired by a gist from @pudquick - https://gist.github.com/pudquick/fcbdd3924ee230592ab4
 
 ## Requirements
-Requires `pyobjc` and Python 3.8+.
+Requires `pyobjc` and Python 3.10+.
 Tested with Python v3.10.7 and PyObjC v8.5 on macOS 12.4+.
 
 # License
