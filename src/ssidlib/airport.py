@@ -327,6 +327,14 @@ class WiFiAdapter:
             else:
                 print("Successfully applied configuration change.")
 
+                if self._major_os_version() >= 13:
+                    print("Note: macOS 13+ appears to no longer allow SSIDs to be manually re-ordered even when the\n"
+                          "      CoreWLAN configuration change returns a success value.\n"
+                          "      Please file feedback with Apple to ask for this feature to be added back to macOS and.\n"
+                          "      raise it with your Apple SE. If you're a member of the Mac Admins Slack, please raise\n"
+                          "      the feedback then provide the feedback number to the right people in the right channel.\n"
+                          "       - https://feedbackassistant.apple.com/")
+
             return success
         elif self._dry_run:
             self.print_current_ssid_order(header="Old SSID order:")
