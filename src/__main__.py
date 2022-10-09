@@ -70,7 +70,10 @@ def _arguments() -> None:
       nargs="*",
       dest="ssids",
       metavar="[ssid]",
-      help="SSID names in the order they need to be re-shuffled into",
+      help=("SSID names in the order they need to be re-shuffled into; if\n"
+            "only one SSID is provided, it will be moved to the first\n"
+            "position in the existing preferred connection order, with all\n"
+            "other SSIDs being added after in their current order"),
       required=False)
 
     a("-i", "--interface",
