@@ -34,6 +34,8 @@ SOFTWARE.
 # Support
 This is provided as is. No support provided.
 
+Note: it appears that the ability to re-order SSIDs is no longer available in macOS 13 public previews; the CoreWLAN framework still returns a success value when the re-order commit is made. If this is an issue you will need to raise feedback with Apple about this, stating the reason why re-ordering SSIDs is critical for your needs. Feedback can be raised via https://feedbackassistant.apple.com by signing in with a developer account, or an ASM/ABM account that is participating in Apple Seed.
+
 # Distribution
 A compressed zipfile is built in the `./dist/` folder, this is built with `#!/usr/bin/env python3` as the interpreter path, this interpreter must be able to import various `pyobjc` packages (`CoreWLAN`, `Foundation`, and `PyObjCTools.Conversion`).
 
