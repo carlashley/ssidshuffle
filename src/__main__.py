@@ -115,7 +115,6 @@ def _arguments() -> None:
         _print_arg_err(msg=msg, parser=parser)
 
     if not args.list_current and not args.ssids:
-        parser.print_usage(sys.stderr)
         msg = f"{NAME}: error: the following arguments are required: -s, --ssids"
         _print_arg_err(msg=msg, parser=parser)
 
