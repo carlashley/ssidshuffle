@@ -2,6 +2,7 @@ import subprocess
 
 from collections import OrderedDict
 from dataclasses import dataclass, field
+from platform import mac_ver
 from typing import Dict, Any, Callable, List, Optional
 
 from CoreWLAN import CWInterface
@@ -125,13 +126,40 @@ def reorder_ssids(new_order: List[str],
                       as the value
     :param current_profiles: a list of mutable/immutable network profiles that will be reordered"""
     reordered = list()
+    tracking = list()
 
+    # Process all SSIDs in the 'new_order' param first
     for ssid in new_order:
         old_index = old_order[ssid]
         profile = current_profiles[old_index]
         reordered.append(profile)
+        tracking.append(ssid)
+
+    # Now process any SSIDs from the current profiles that was not included in
+    # the 'new_order' param so existing SSIDs are not arbitrarily removed.
+    for profile in current_profiles:
+        ssid = o2p(profile.ssid())
+
+        if ssid not in tracking:
+            reordered.append(profile)
+            tracking.append(ssid)
 
     return reordered
+
+
+def major_os_version() -> int:
+    """Return the major OS version."""
+    return int(mac_ver()[0].split(".")[0])
+
+
+def mac_corewlan_framework_warning() -> None:
+    """Print a message about macOS 13+ and CoreWLAN, aka throw shade at Apple."""
+    print("Note: macOS 13+ appears to no longer allow SSIDs to be manually re-ordered even when the\n"
+          "      CoreWLAN configuration change returns a success value.\n"
+          "      Please file feedback with Apple to ask for this feature to be added back to macOS and.\n"
+          "      raise it with your Apple SE. If you're a member of the Mac Admins Slack, please raise\n"
+          "      the feedback then provide the feedback number to the right people in the right channel.\n"
+          "       - https://feedbackassistant.apple.com/")
 
 
 def get_current_connection_properties(iface: CWInterface) -> Optional[Dict[Any, Any]]:
