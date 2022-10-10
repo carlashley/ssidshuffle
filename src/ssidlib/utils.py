@@ -1,9 +1,16 @@
 import subprocess
 
+from collections import OrderedDict
 from dataclasses import dataclass, field
-from typing import Any, Callable, Optional
+from typing import Dict, Any, Callable, List, Optional
 
+from CoreWLAN import CWInterface
+from CoreWLAN import CWConfiguration
+from CoreWLAN import CWMutableConfiguration
 from PyObjCTools import Conversion
+
+
+ListNetworkConfigurationTypes = List[CWConfiguration | CWMutableConfiguration]
 
 
 @dataclass
@@ -106,3 +113,138 @@ def o2p(obj: Any, helper: Optional[Callable] = None) -> Any:
     :param obj: NS* object to convert
     :param helper: conversion helper function to pass to the conversion call if the PyObjC conversion fails"""
     return Conversion.pythonCollectionFromPropertyList(obj, conversionHelper=helper)
+
+
+def reorder_ssids(new_order: List[str],
+                  old_order: OrderedDict,
+                  current_profiles: ListNetworkConfigurationTypes) -> ListNetworkConfigurationTypes:
+    """Reorder a list of CoreWLAN configurations (mutable or immutable) and return the reordered list.
+
+    :param new_order: a list of SSID names (as strings) in the order they will be organised into
+    :param old_order: an ordered dictionary of the SSIDs with the SSID name as the key and the position
+                      as the value
+    :param current_profiles: a list of mutable/immutable network profiles that will be reordered"""
+    reordered = list()
+
+    for ssid in new_order:
+        old_index = old_order[ssid]
+        profile = current_profiles[old_index]
+        reordered.append(profile)
+
+    return reordered
+
+
+def get_current_connection_properties(iface: CWInterface) -> Optional[Dict[Any, Any]]:
+    """Get all the property values from a 'CWInterface' object and return a dictionary object.
+
+    :param iface: a 'CWInterface' object to parse property values from"""
+    ip_monitor = iface.ipMonitor()
+    data = {"aggregate_noise": iface.aggregateNoise(),
+            "aggregate_rssi": iface.aggregateRSSI(),
+            "airplay_statistics": iface.airplayStatistics(),
+            "auto_content_accessing_proxy": iface.autoContentAccessingProxy(),
+            "auto_join_history": iface.autoJoinHistory(),
+            "awdl_operating_mode": iface.awdlOperatingMode(),
+            "available_wlan_channels": list(iface.availableWLANChannels()),
+            "bssid": iface.bssid(),  # Note, this won't return anything in 10.15+ because location data
+            "busy": iface.busy(),
+            "cached_scan_results": list(iface.cachedScanResults()),  # Last network scan results
+            "capabilities": o2p(iface.capabilities()),
+            "caused_last_wake": iface.causedLastWake(),
+            "channel": iface.channel(),
+            "channel_band": iface.channel(),
+            "configuration": iface.configuration(),
+            "country_code": iface.countryCode(),
+            "device": iface.device(),
+            "device_attached": iface.deviceAttached(),
+            "eapo_client": iface.eapolClient(),
+            "entity_name": iface.entityName(),
+            "hardware_address": iface.hardwareAddress(),
+            "interface_capabilities": iface.interfaceCapabilities(),
+            "interface_mode": iface.interfaceMode(),
+            "interface_state": iface.interfaceState(),
+            "io_80211_controller_info": o2p(iface.IO80211ControllerInfo()),
+            "ipv4_addresses": o2p(ip_monitor.ipv4Addresses()),
+            "ipv4_available": ip_monitor.ipv4Available(),
+            "ipv4_global_setup_config": o2p(ip_monitor.ipv4GlobalSetupConfig()),
+            "ipv4_global_setup_key": o2p(ip_monitor.ipv4GlobalSetupKey()),
+            "ipv4_global_state_config": o2p(ip_monitor.ipv4GlobalStateConfig()),
+            "ipv4_global_state_key": ip_monitor.ipv4GlobalStateKey(),
+            "ipv4_primary_interface": ip_monitor.ipv4PrimaryInterface(),
+            "ipv4_primary_service_id": ip_monitor.ipv4PrimaryServiceID(),
+            "ipv4_routable": ip_monitor.ipv4Routable(),
+            "ipv4_router": ip_monitor.ipv4Router(),
+            "ipv4_setup_config": o2p(ip_monitor.ipv4SetupConfig()),
+            "ipv4_state_config": o2p(ip_monitor.ipv4StateConfig()),
+            "ipv4_wifi_global_setup_config": o2p(ip_monitor.ipv4WiFiGlobalSetupConfig()),
+            "ipv4_wifi_global_state_config": o2p(ip_monitor.ipv4WiFiGlobalStateConfig()),
+            "ipv4_wifi_setup_config": o2p(ip_monitor.ipv4WiFiSetupConfig()),
+            "ipv4_wifi_setup_key": ip_monitor.ipv4WiFiSetupKey(),
+            "ipv4_wifi_state_config": o2p(ip_monitor.ipv4WiFiStateConfig()),
+            "ipv4_wifi_state_key": ip_monitor.ipv4WiFiStateKey(),
+            "ipv6_addresses": o2p(ip_monitor.ipv6Addresses()),
+            "ipv6_available": ip_monitor.ipv6Available(),
+            "ipv6_global_setup_config": o2p(ip_monitor.ipv6GlobalSetupConfig()),
+            "ipv6_global_setup_key": ip_monitor.ipv6GlobalSetupKey(),
+            "ipv6_global_state_config": o2p(ip_monitor.ipv6GlobalStateConfig()),
+            "ipv6_global_state_key": ip_monitor.ipv6GlobalStateKey(),
+            "ipv6_primary_interface": ip_monitor.ipv6PrimaryInterface(),
+            "ipv6_primary_service_id": ip_monitor.ipv6PrimaryServiceID(),
+            "ipv6_routable": ip_monitor.ipv6Routable(),
+            "ipv6_router": ip_monitor.ipv6Router(),
+            "ipv6_setup_config": o2p(ip_monitor.ipv6SetupConfig()),
+            "ipv6_state_config": o2p(ip_monitor.ipv6StateConfig()),
+            "ipv6_wifi_global_setup_config": o2p(ip_monitor.ipv6WiFiGlobalSetupConfig()),
+            "ipv6_wifi_global_state_config": o2p(ip_monitor.ipv6WiFiGlobalStateConfig()),
+            "ipv6_wifi_setup_config": o2p(ip_monitor.ipv6WiFiSetupConfig()),
+            "ipv6_wifi_setup_key": ip_monitor.ipv6WiFiSetupKey(),
+            "ipv6_wifi_state_config": o2p(ip_monitor.ipv6WiFiStateConfig()),
+            "ipv6_wifi_state_key": ip_monitor.ipv6WiFiStateKey(),
+            "is_airplay_in_progress": iface.isAirPlayInProgress(),
+            "join_history": iface.joinHistory(),
+            "last_network_joined": iface.lastNetworkJoined(),
+            "last_power_state": iface.lastPowerState(),
+            "last_preferred_network_joined": iface.lastPreferredNetworkJoined(),
+            "last_tether_device_joined": iface.lastTetherDeviceJoined(),
+            "max_nss_supported_for_ap": iface.maxNSSSupportedForAP(),
+            "maximum_link_speed": iface.maximumLinkSpeed(),
+            "monitor_mode": iface.monitorMode(),
+            "name": iface.name(),
+            "network_interface_available": iface.networkInterfaceAvailable(),
+            "network_service_ids": o2p(iface.networkServiceIDs()),
+            "noise": iface.noise(),
+            "noise_measurement": iface.noiseMeasurement(),
+            "num_tx_streams": iface.numTXStreams(),
+            "number_of_spatial_streams": iface.numberOfSpatialStreams(),
+            "observation_info": iface.observationInfo(),
+            "op_mode": iface.opMode(),
+            "parent_interface_name": iface.parentInterfaceName(),
+            "physical_mode": iface.phyMode(),
+            "physical_layer_mode": iface.physicalLayerMode(),
+            "power": iface.power(),
+            "power_debug_info": o2p(iface.powerDebugInfo()),
+            "power_save_mode_enabled": iface.powerSaveModeEnabled(),
+            "roam_history": iface.roamHistory(),
+            "rssi": iface.rssi(),
+            "rssi_value": iface.rssiValue(),
+            "security": iface.security(),
+            "security_mode": iface.securityMode(),
+            "security_type": iface.securityType(),
+            "service_active": iface.serviceActive(),
+            "ssid_name": iface.ssid(),
+            "state_info": iface.stateInfo(),
+            "supported_ism_channels": list(iface.supportedISMChannels()),
+            "supported_physical_layer_modes": iface.supportedPhysicalLayerModes(),
+            "supported_wlan_channels": list(iface.supportedWLANChannels()),
+            "supported_bsxpc_secure_coding": iface.supportsBSXPCSecureCoding(),
+            "supported_rbsxpc_secure_coding": iface.supportsRBSXPCSecureCoding(),
+            "supports_short_gi_40mhz": iface.supportsShortGI40MHz(),
+            "transmit_power": iface.transmitPower(),
+            "transmit_rate": iface.transmitRate(),
+            "tx_rate": iface.txRate(),
+            "virtual_interface_role": iface.virtualInterfaceRole(),
+            "wake_on_wireless_enabled": iface.wakeOnWirelessEnabled(),
+            "wlan_channel": iface.wlanChannel(),
+            "zone": iface.zone()}
+
+    return data
