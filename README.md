@@ -77,7 +77,7 @@ options:
 [jappleseed@infiniteloop]:ssidshuffle #
 [jappleseed@infiniteloop]:ssidshuffle #
 [jappleseed@infiniteloop]:ssidshuffle # ./dist/ssidshuffle -l
-Current SSIDs for interface 'en1' (in order):
+Current SSID order:
  0: 'Dartanian'
  1: 'Pismo'
  2: 'Mercury'
@@ -103,6 +103,7 @@ New SSID order:
 [jappleseed@infiniteloop]:ssidshuffle #
 [jappleseed@infiniteloop]:ssidshuffle #
 [jappleseed@infiniteloop]:ssidshuffle # sudo ./dist/ssidshuffle -s Columbus Dartanian Pismo Mercury "Mac Man" --power-cycle
+Password:
 Successfully applied configuration change.
 Power cycling wireless interface 'en1'
 [jappleseed@infiniteloop]:ssidshuffle #
@@ -125,7 +126,7 @@ New SSID order:
 [jappleseed@infiniteloop]:ssidshuffle #
 [jappleseed@infiniteloop]:ssidshuffle #
 [jappleseed@infiniteloop]:ssidshuffle # ./dist/ssidshuffle -s Columbus Dartanian Pismo Mercury "Mac Man"
-Error committing change: Error Domain=com.apple.wifi.apple80211API.error Code=-3930 "(null)" - you may need to run this with 'sudo'.
+You must be root to apply these changes.
 [jappleseed@infiniteloop]:ssidshuffle #
 [jappleseed@infiniteloop]:ssidshuffle #
 [jappleseed@infiniteloop]:ssidshuffle #
@@ -137,6 +138,12 @@ Successfully applied configuration change.
 [jappleseed@infiniteloop]:ssidshuffle # sudo ./dist/ssidshuffle -i en1 -s Dartanian Pismo Mercury "Mac Man" Columbus Kaleidoscope
 Cannot re-order the specified SSIDs as one or more SSID is not configured.
 SSIDs not configured on 'en1': 'Kaleidoscope'.
+Current SSID order:
+ 0: 'Columbus'
+ 1: 'Dartanian'
+ 2: 'Pismo'
+ 3: 'Mercury'
+ 4: 'Mac Man'
 [jappleseed@infiniteloop]:ssidshuffle # ./dist/ssidshuffle --power-cycle
 Power cycling wireless interface 'en1'
 [jappleseed@infiniteloop]:ssidshuffle #
