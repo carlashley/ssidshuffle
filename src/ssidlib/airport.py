@@ -13,9 +13,12 @@ from CoreWLAN import (CWConfiguration,
 from Foundation import NSOrderedSet
 
 from .models.interface import InterfaceConnection
+from .models.interface import NETWORK_SETUP_MAP_SECURITY_TYPES as NS_MST
 from .utils import get_current_connection_properties
 from .utils import major_os_version
 from .utils import o2p
+from .utils import add_ssid_at_index
+from .utils import remove_ssid
 from .utils import reorder_ssids
 
 
@@ -65,6 +68,9 @@ class WiFiAdapter:
         iface = self._client.interfaceWithName_(self._iface)
 
         return conf.alloc().initWithConfiguration_(iface.configuration())
+
+    def _has_configured_ssids(self) -> bool:
+        return len(self.current_ssid_order) > 0
 
     def _interface_with_name(self) -> Optional[CWInterface]:
         """Return the interface as a 'CWInterface' object."""
@@ -155,10 +161,13 @@ class WiFiAdapter:
         """Print the current SSID order.
 
         :param header: the header message string to print"""
-        print(header)
+        if self._has_configured_ssids():
+            print(header)
 
-        for ssid, posn in self.current_ssid_order.items():
-            print(f" {posn}: {ssid!r}")
+            for ssid, posn in self.current_ssid_order.items():
+                print(f" {posn}: {ssid!r}")
+        else:
+            print(f"No SSIDs found configured for {self._iface!r}", file=sys.stderr)
 
     def print_updated_ssid_order(self,
                                  reordered_ssids: List[ListNetworkConfigurationTypes],
@@ -173,13 +182,19 @@ class WiFiAdapter:
             ssid = o2p(profile.ssid())
             print(f" {reordered_ssids.index(profile)}: {ssid!r}")
 
-    def reorder(self, new_order: List[str] | Dict[str, int]) -> Any:
+    def reorder(self, new_order: List[str] | Dict[str, int], use_networksetup: Optional[bool] = False) -> Any:
         """Reorder the current SSID preferred join order.
 
         :param new_order: a list of SSID names (string) in order that the current SSIDs will be reordered to, or a
                           dictionary object where the SSID (string) is the key, and the order/position
                           (int) is the value, if a dictionary is provided, the first SSID must have a position
-                          value of 0"""
+                          value of 0
+        :param use_networksetup: forcibly use 'networksetup' instead of CoreWLAN"""
+        # Check there are SSIDs to configure
+        if not self._has_configured_ssids():
+            print(f"No SSIDs found configured for {self._iface!r}", file=sys.stderr)
+            sys.exit()
+
         # Convert a dictionary of SSID orders into a list
         if isinstance(new_order, dict):
             new_order = [ssid for ssid, _ in sorted(new_order.items(), key=lambda x: x[1])]
@@ -192,7 +207,8 @@ class WiFiAdapter:
 
             msg = f"Error: Cannot re-order the SSIDs as one or more SSID is not configured on {self._iface!r}"
             print(msg, file=sys.stderr)
-            print(f"SSIDs not configured on {self._iface}: {missing}")
+            print(f"SSIDs not configured on {self._iface}: {missing}", file=sys.stderr)
+            self.print_current_ssid_order()
             sys.exit(2)
 
         # Reorder the SSIDs into a new order
@@ -205,13 +221,9 @@ class WiFiAdapter:
             self.print_updated_ssid_order(header="New SSID order:")
             sys.exit()
 
-        # current_ssids = self.network_profiles  # Note, this is an immutable configuration
-        # current_order = self.current_ssid_order
-        # current_order_as_list = [ssid for ssid, _ in current_order.items()]
-
         # macOS Ventura 13.0 and newer appear unable to use the CoreWLAN framework to reorder SSIDs,
         # so use the CoreWLAN framework for macOS versions prior to macOS Ventura
-        if not self._dry_run and major_os_version < 12:
+        if not self._dry_run and major_os_version() <= 12 and not use_networksetup:
             nso = NSOrderedSet.orderedSetWithArray_
 
             current_config = self.mutable_configuration
@@ -227,17 +239,36 @@ class WiFiAdapter:
                 sys.exit(1)
             else:
                 print("Successfully applied configuration change.")
-        elif not self._dry_run and major_os_version() >= 12:
-            pass
-            # security_types_map = 
-        #    return success
-        #elif self._dry_run:
-        #    self.print_current_ssid_order(header="Old SSID order:")
+        elif not self._dry_run and major_os_version() >= 13 or use_networksetup:  # Use 'networksetup' for macOS 13+
+            print("Falling back to 'networksetup'")
+            adding_ssids = [o2p(profile.ssid()) for profile in reordered_ssids]
+            security_types_map = {o2p(profile.ssid()): NS_MST[profile.security()] for profile in reordered_ssids}
+            removed = remove_ssid(iface=self._iface, remove_all=True)
+            added_ssids = list()
 
-        #    print("New SSID order:")
+            if removed.returncode == 0:
+                for profile in reordered_ssids:
+                    index = reordered_ssids.index(profile)
+                    ssid = o2p(profile.ssid())
+                    security_type = security_types_map[ssid]
+                    added = add_ssid_at_index(iface=self._iface,
+                                              ssid=ssid,
+                                              index=index,
+                                              security_type=security_type)
 
-        #    for ssid in added_ssids:
-        #        print(f" {added_ssids.index(ssid)}: {ssid!r}")
+                    if added.returncode == 0:
+                        added_ssids.append(ssid)
+
+                if sorted(added_ssids) == sorted(adding_ssids):
+                    print("Successfully applied configuration change.")
+                else:
+                    missing = ", ".join([f"{ssid!r}" for ssid in adding_ssids if ssid not in added_ssids])
+                    print(f"Error: The following SSIDs were not re-sorted:\n  {missing}", file=sys.stderr)
+                    sys.exit(99)
+            else:
+                print(f"Error: {removed.stdout or removed.stderr}", file=sys.stderr)
+                print("Please check Wi-Fi settings and re-add Wi-Fi networks if necessary.")
+                sys.exit(removed.returncode)
 
     def power_cycle(self, wait: str | int = 5) -> None:
         """Power cycles the wireless network interface off then on.

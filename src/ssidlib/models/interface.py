@@ -42,6 +42,22 @@ SECURITY_TYPES = {kCWSecurityDynamicWEP: "Dynamic WEP",
                   kCWSecurityWPAPersonal: "WPA Personal",
                   kCWSecurityWPAPersonalMixed: "WPA/WPA2 Personal Mixed"}
 
+NETWORK_SETUP_MAP_SECURITY_TYPES = {kCWSecurityDynamicWEP: "8021XWEP",  # This is a guess...
+                                    kCWSecurityEnterprise: "8021XWEP",  # This is a guess...
+                                    kCWSecurityNone: "OPEN",
+                                    kCWSecurityPersonal: "WPA",  # This is a guess...
+                                    kCWSecurityUnknown: "OPEN",  # networksetup defaults to open if sec type unknown
+                                    kCWSecurityWEP: "WEP",
+                                    kCWSecurityWPA2Enterprise: "WPA2E",
+                                    kCWSecurityWPA2Personal: "WPA2",
+                                    kCWSecurityWPA3Enterprise: "WPA2E",  # WPA3 is not an option for networksetup
+                                    kCWSecurityWPA3Personal: "WPA2",  # WPA3 is not an option for networksetup
+                                    kCWSecurityWPA3Transition: "WPA2",  # WPA3 is not an option for networksetup
+                                    kCWSecurityWPAEnterprise: "WPAE",
+                                    kCWSecurityWPAEnterpriseMixed: "WPAE/WPA2E",
+                                    kCWSecurityWPAPersonal: "WPA",
+                                    kCWSecurityWPAPersonalMixed: "WPA/WPA2"}
+
 SECURITY_MODES = {kCWSecurityModeDynamicWEP: "Dynamic WEP Mode",
                   kCWSecurityModeOpen: "Open Mode",
                   kCWSecurityModeWEP: "WEP Mode",

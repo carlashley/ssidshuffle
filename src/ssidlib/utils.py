@@ -81,15 +81,30 @@ def remove_ssid(iface: str, ssid: Optional[str] = None, remove_all: Optional[boo
         return NetworkSetupOutput(returncode=returncode, stdout=None, stderr=stdout or stderr)
 
 
-def add_ssid_at_index(iface: str, ssid: str, index: int | str, security_type: str) -> NetworkSetupOutput:
+def add_ssid_at_index(iface: str,
+                      ssid: str,
+                      index: int | str,
+                      security_type: str,
+                      password: Optional[str] = None) -> NetworkSetupOutput:
     """Run the '/usr/sbin/networksetup' command with arguments.
     Note: Apple does not correctly return output on stdout/stderr when errors
           are raised, so this uses a dataclass to resolve this.
 
     :param iface: wireless interface to add the preferred network to, for example: 'en1'
     :param ssid: the SSID name (string) to add, for example: 'Pismo'
-    :param index: the index position to add the SSID into (offset starts at 0), for example: 12"""
+    :param index: the index position to add the SSID into (offset starts at 0), for example: 12
+    :praam security_type: the security type to use when adding the interface, default 'networksetup'
+                          behaviour is to use 'OPEN' as the default security in certain circumstances
+    :param password: password (as plaintext string) of the SSID being added, this is plaintext, so it
+                     is not recommended to use this as a means of configuring the SSID, use other
+                     methods instead, also note, no username can be provided for SSIDs that require
+                     a username and password credential to be provided"""
     cmd = ["-addpreferredwirelessnetworkatindex", iface, ssid, str(index), security_type]
+
+    # Only append if password is there
+    if password:
+        cmd.append(password)
+
     p = networksetup(args=cmd)
     returncode = p.returncode
     stdout = p.stdout.strip() if not p.stdout == "" else None

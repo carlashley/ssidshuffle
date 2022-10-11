@@ -34,7 +34,12 @@ SOFTWARE.
 # Support
 This is provided as is. No support provided.
 
-Note: it appears that the ability to re-order SSIDs is no longer available in macOS 13 public previews; the CoreWLAN framework still returns a success value when the re-order commit is made. If this is an issue you will need to raise feedback with Apple about this, stating the reason why re-ordering SSIDs is critical for your needs. Feedback can be raised via https://feedbackassistant.apple.com by signing in with a developer account, or an ASM/ABM account that is participating in Apple Seed.
+# Notes
+- **Use this at your own risk, no support/warranty is provided!**
+- When run on macOS 12 or newer, `sudo` is required to make configuration changes
+- When run on macOS 13 or newer, `networksetup -removeallpreferredwirelessnetworks` is used to remove all configured wireless networks from the relevant wireless interface, and `networksetup -addpreferredwirelessnetworkatindex` is then used to re-add them back in the new order.
+- - This is a _nuclear_ method to use as if the 'add' method fails, all the configured wireless networks will have been removed, manually re-connecting to the wireless networks may be required
+ - - It appears that the ability to re-order SSIDs with CoreWLAN is no longer available in macOS 13 public previews (even though developer notes do not indicate any deprecation); the CoreWLAN framework still returns a success value when the re-order commit is made. If this is an issue you will need to raise feedback with Apple about this, stating the reason why re-ordering SSIDs is critical for your needs. Feedback can be raised via https://feedbackassistant.apple.com by signing in with a developer account, or an ASM/ABM account that is participating in Apple Seed.
 
 # Distribution
 A compressed zipfile is built in the `./dist/` folder, this is built with `#!/usr/bin/env python3` as the interpreter path, this interpreter must be able to import various `pyobjc` packages (`CoreWLAN`, `Foundation`, and `PyObjCTools.Conversion`).
@@ -55,10 +60,15 @@ options:
                         SSID names in the order they need to be re-shuffled into; if
                         only one SSID is provided, it will be moved to the first
                         position in the existing preferred connection order, with all
-                        other SSIDs being added after in their current order
+                        other SSIDs being added after in their current order; note:
+                        this falls back to using 'networksetup' on macOS 13+, you will
+                        need to perform this option as root or by using 'sudo'.
+                        when 'networksetup' is used, the SSIDs automatically get the
+                        auto-join state enabled, you will need to change this manually
+                        if auto-join is not desired
   -i [interface], --interface [interface]
-                        the wireless network interface, for example: 'en0'; defaults
-                        to the current wirless interface when this argument is not
+                        the wireless network interface, for example: 'en1'; defaults
+                        to the current wirless interface ('en1') when this argument is not
                         supplied
   --power-cycle         power cycles the wireless interface with a 5 second wait
                         between off/on states
@@ -127,4 +137,9 @@ Successfully applied configuration change.
 [jappleseed@infiniteloop]:ssidshuffle # sudo ./dist/ssidshuffle -i en1 -s Dartanian Pismo Mercury "Mac Man" Columbus Kaleidoscope
 Cannot re-order the specified SSIDs as one or more SSID is not configured.
 SSIDs not configured on 'en1': 'Kaleidoscope'.
+[jappleseed@infiniteloop]:ssidshuffle # ./dist/ssidshuffle --power-cycle
+Power cycling wireless interface 'en1'
+[jappleseed@infiniteloop]:ssidshuffle #
+[jappleseed@infiniteloop]:ssidshuffle #
+[jappleseed@infiniteloop]:ssidshuffle #
 ```

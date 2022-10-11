@@ -28,7 +28,10 @@ SOFTWARE."""
 import argparse
 import sys
 
+from os import geteuid
 from ssidlib.airport import WiFiAdapter
+from ssidlib.utils import major_os_version
+
 
 NAME = "ssidshuffle"  # for custom arg errors
 VERSION = "1.0.20221009"
@@ -73,14 +76,19 @@ def _arguments() -> None:
       help=("SSID names in the order they need to be re-shuffled into; if\n"
             "only one SSID is provided, it will be moved to the first\n"
             "position in the existing preferred connection order, with all\n"
-            "other SSIDs being added after in their current order"),
+            "other SSIDs being added after in their current order; note:\n"
+            "this falls back to using 'networksetup' on macOS 13+, you will\n"
+            "need to perform this option as root or by using 'sudo'.\n"
+            "when 'networksetup' is used, the SSIDs automatically get the\n"
+            "auto-join state enabled, you will need to change this manually\n"
+            "if auto-join is not desired"),
       required=False)
 
     a("-i", "--interface",
       dest="interface",
       metavar="[interface]",
-      help=("the wireless network interface, for example: 'en0'; defaults\n"
-            "to the current wirless interface when this argument is not\n"
+      help=(f"the wireless network interface, for example: {iface!r}; defaults\n"
+            f"to the current wirless interface ({iface!r}) when this argument is not\n"
             "supplied"),
       required=False)
 
@@ -91,11 +99,21 @@ def _arguments() -> None:
             "between off/on states"),
       required=False)
 
+    a("--networksetup",
+      action="store_true",
+      dest="use_networksetup",
+      help=argparse.SUPPRESS,
+      required=False)
+
     a("-v", "--version",
       action="version",
       version=f"{NAME} v{VERSION}")
 
     args = parser.parse_args()
+
+    if args.ssids and major_os_version() >= 12 and not geteuid() == 0:
+        print("You must be root to apply these changes.", file=sys.stderr)
+        sys.exit(1)
 
     if args.ssids and args.list_current:
         msg = f"{NAME}: error: argument -s, --ssids: not allowed with argument -l/--list-current"
@@ -114,21 +132,28 @@ def _arguments() -> None:
 
         _print_arg_err(msg=msg, parser=parser)
 
-    if not args.list_current and not args.ssids:
-        msg = f"{NAME}: error: the following arguments are required: -s, --ssids"
+    if not args.ssids:
+        if not (args.list_current or args.power_cycle):
+            msg = f"{NAME}: error: the following arguments are required: -s, --ssids"
+            _print_arg_err(msg=msg, parser=parser)
+
+    if args.use_networksetup and not args.ssids:
+        msg = f"{NAME}: error: the following arguments are required: -s, --ssids when using --networksetup"
         _print_arg_err(msg=msg, parser=parser)
 
     return args
 
 
-if __name__ == "__main__":
+def main():
+    """Main"""
     args = _arguments()
     wifi = WiFiAdapter(iface=args.interface, dry_run=args.dry_run)
 
     if args.list_current:
         wifi.print_current_ssid_order()
-    else:
-        wifi.reorder(order=args.ssids)
+
+    if args.ssids:
+        wifi.reorder(new_order=args.ssids, use_networksetup=args.use_networksetup)
 
     if args.power_cycle:
         if not args.dry_run:
@@ -136,3 +161,7 @@ if __name__ == "__main__":
             wifi.power_cycle()
         else:
             print(f"Would power cycle wireless interface {wifi.interface!r}")
+
+
+if __name__ == "__main__":
+    main()
