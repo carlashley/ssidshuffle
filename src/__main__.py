@@ -111,7 +111,7 @@ def _arguments() -> None:
 
     args = parser.parse_args()
 
-    if args.ssids and major_os_version() >= 12 and not geteuid() == 0:
+    if args.ssids and major_os_version() >= 12 and not geteuid() == 0 and not args.dry_run:
         print("You must be root to apply these changes.", file=sys.stderr)
         sys.exit(1)
 
