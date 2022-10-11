@@ -218,7 +218,7 @@ class WiFiAdapter:
 
         if self._dry_run:
             self.print_current_ssid_order(header="Old SSID order:")
-            self.print_updated_ssid_order(header="New SSID order:")
+            self.print_updated_ssid_order(reordered_ssids=reordered_ssids, header="New SSID order:")
             sys.exit()
 
         # macOS Ventura 13.0 and newer appear unable to use the CoreWLAN framework to reorder SSIDs,
