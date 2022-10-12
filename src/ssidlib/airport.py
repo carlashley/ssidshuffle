@@ -14,6 +14,7 @@ from Foundation import NSOrderedSet
 
 from .models.interface import InterfaceConnection
 from .models.interface import NETWORK_SETUP_MAP_SECURITY_TYPES as NS_MST
+from .models.interface import SECURITY_TYPES
 from .utils import get_current_connection_properties
 from .utils import major_os_version
 from .utils import o2p
@@ -164,8 +165,12 @@ class WiFiAdapter:
         if self._has_configured_ssids():
             print(header)
 
-            for ssid, posn in self.current_ssid_order.items():
-                print(f" {posn}: {ssid!r}")
+            for profile in self.network_profiles:
+                posn = self.network_profiles.index(profile)
+                ssid = o2p(profile.ssid())
+                security_type = SECURITY_TYPES[o2p(profile.security())]
+                networksecurity_st = NS_MST[o2p(profile.security())]
+                print(f"  {posn}: {ssid}, security type: {security_type} (networksetup type: {networksecurity_st!r})")
         else:
             print(f"No SSIDs found configured for {self._iface!r}", file=sys.stderr)
 
