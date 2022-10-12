@@ -78,11 +78,11 @@ options:
 [jappleseed@infiniteloop]:ssidshuffle #
 [jappleseed@infiniteloop]:ssidshuffle # ./dist/ssidshuffle -l
 Current SSID order:
- 0: 'Dartanian'
- 1: 'Pismo'
- 2: 'Mercury'
- 3: 'Mac Man'
- 4: 'Columbus'
+ 0: 'Dartanian', security type: WPA3 Transition (WPA3/WPA2 Personal) (networksetup type: 'WPA2')
+ 1: 'Pismo', security type: Open/NoSecurity (networksetup type: 'OPEN')
+ 2: 'Mercury', security type: WPA2 Personal (networksetup type: 'WPA2')
+ 3: 'Mac Man', security type: Dynamic WEP (networksetup type: '8021XWEP')
+ 4: 'Columbus', security type: WPA3 Enterprise (networksetup type: 'WPA3E')
 [jappleseed@infiniteloop]:ssidshuffle #
 [jappleseed@infiniteloop]:ssidshuffle #
 [jappleseed@infiniteloop]:ssidshuffle #
@@ -139,11 +139,11 @@ Successfully applied configuration change.
 Cannot re-order the specified SSIDs as one or more SSID is not configured.
 SSIDs not configured on 'en1': 'Kaleidoscope'.
 Current SSID order:
- 0: 'Columbus'
- 1: 'Dartanian'
- 2: 'Pismo'
- 3: 'Mercury'
- 4: 'Mac Man'
+ 0: 'Columbus', security type: WPA3 Enterprise (networksetup type: 'WPA3E')
+ 1: 'Dartanian', security type: WPA3 Transition (WPA3/WPA2 Personal) (networksetup type: 'WPA2')
+ 2: 'Pismo', security type: Open/NoSecurity (networksetup type: 'OPEN')
+ 3: 'Mercury', security type: WPA2 Personal (networksetup type: 'WPA2')
+ 4: 'Mac Man', security type: Dynamic WEP (networksetup type: '8021XWEP')
 [jappleseed@infiniteloop]:ssidshuffle # ./dist/ssidshuffle --power-cycle
 Power cycling wireless interface 'en1'
 [jappleseed@infiniteloop]:ssidshuffle #
