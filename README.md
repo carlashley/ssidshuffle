@@ -44,6 +44,7 @@ This is provided as is. No support provided.
 # Distribution
 A compressed zipfile is built in the `./dist/` folder, this is built with `#!/usr/bin/env python3` as the interpreter path, this interpreter must be able to import various `pyobjc` packages (`CoreWLAN`, `Foundation`, and `PyObjCTools.Conversion`).
 
+A standalone universal2 build is found in the `./dist/standalone/` folder, this is not fully test, be aware that due to the nature of how standalone installers built with `pyinstaller` work, there is an added time hit when running the standalone binary of several seconds.
 
 # Usage
 ```
