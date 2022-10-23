@@ -1,7 +1,31 @@
-from dataclasses import dataclass, field
-from typing import Any
+from typing import Optional
 
-from CoreWLAN import (kCWSecurityDynamicWEP,
+from CoreWLAN import (CWConfiguration,
+                      CWWiFiClient,
+                      CWInterface,
+                      CWMutableConfiguration,
+                      kCWInterfaceModeHostAP,
+                      kCWInterfaceModeIBSS,
+                      kCWInterfaceModeNone,
+                      kCWInterfaceModeStation,
+                      kCWInterfaceStateAssociating,
+                      kCWInterfaceStateAuthenticating,
+                      kCWInterfaceStateInactive,
+                      kCWInterfaceStateScanning,
+                      kCWInterfaceStateRunning,
+                      kCWOpModeHostAP,
+                      kCWOpModeIBSS,
+                      kCWOpModeMonitorMode,
+                      kCWOpModeStation,
+                      kCWOpNotPermitted,
+                      kCWPHYMode11a,
+                      kCWPHYMode11ac,
+                      kCWPHYMode11ax,
+                      kCWPHYMode11b,
+                      kCWPHYMode11g,
+                      kCWPHYMode11n,
+                      kCWPHYModeNone,
+                      kCWSecurityDynamicWEP,
                       kCWSecurityEnterprise,
                       kCWSecurityModeDynamicWEP,
                       kCWSecurityModeOpen,
@@ -25,159 +49,152 @@ from CoreWLAN import (kCWSecurityDynamicWEP,
                       kCWSecurityWPAPersonal,
                       kCWSecurityWPAPersonalMixed)
 
+from .channel import ChannelBand
+from ..utils import airport
+from ..utils.pyobjc import o2p
 
-SECURITY_TYPES = {kCWSecurityDynamicWEP: "Dynamic WEP",
-                  kCWSecurityEnterprise: "Enterprise",
-                  kCWSecurityNone: "Open/No Security",
-                  kCWSecurityPersonal: "Personal",
+INTERFACE_MODES = {kCWInterfaceModeHostAP: "Host AP",
+                   kCWInterfaceModeIBSS: "IBSS",
+                   kCWInterfaceModeNone: "No Mode",
+                   kCWInterfaceModeStation: "Station"}
+
+INTERFACE_STATES = {kCWInterfaceStateAssociating: "Associating",
+                    kCWInterfaceStateAuthenticating: "Authenticating",
+                    kCWInterfaceStateInactive: "Inactive",
+                    kCWInterfaceStateScanning: "Scanning",
+                    kCWInterfaceStateRunning: "Running"}
+
+NETWORKSETUP_SECURITY_MAP = {kCWSecurityDynamicWEP: "8021XWEP",  # This is a guess...
+                             kCWSecurityEnterprise: "8021XWEP",  # This is a guess...
+                             kCWSecurityNone: "OPEN",
+                             kCWSecurityPersonal: "WPA",  # This is a guess...
+                             kCWSecurityUnknown: "OPEN",  # networksetup defaults to open if sec type unknown
+                             kCWSecurityWEP: "WEP",
+                             kCWSecurityWPA2Enterprise: "WPA2E",
+                             kCWSecurityWPA2Personal: "WPA2",
+                             kCWSecurityWPA3Enterprise: "WPA2E",  # WPA3 is not an option for networksetup
+                             kCWSecurityWPA3Personal: "WPA2",  # WPA3 is not an option for networksetup
+                             kCWSecurityWPA3Transition: "WPA2",  # WPA3 is not an option for networksetup
+                             kCWSecurityWPAEnterprise: "WPAE",
+                             kCWSecurityWPAEnterpriseMixed: "WPAE/WPA2E",
+                             kCWSecurityWPAPersonal: "WPA",
+                             kCWSecurityWPAPersonalMixed: "WPA/WPA2"}
+
+OPERATING_MODES = {kCWOpModeStation: "Station",
+                   kCWOpModeIBSS: "IBSS",
+                   kCWOpModeHostAP: "Host AP",
+                   kCWOpModeMonitorMode: "Monitor Mode",
+                   kCWOpNotPermitted: "Not Permitted"}
+
+PHYSICAL_MODES = {kCWPHYMode11a: "802.11a",
+                  kCWPHYMode11b: "802.11b",
+                  kCWPHYMode11g: "802.11g",
+                  kCWPHYMode11n: "802.11n",
+                  kCWPHYMode11ac: "802.11ac",
+                  kCWPHYMode11ax: "802.11ax",
+                  kCWPHYModeNone: "Unknown"}
+
+SECURITY_TYPES = {kCWSecurityDynamicWEP: "WEP/Dynamic",
+                  kCWSecurityEnterprise: "WPA",
+                  kCWSecurityNone: "Open",
+                  kCWSecurityPersonal: "PSK",
                   kCWSecurityUnknown: "Unknown",
                   kCWSecurityWEP: "WEP",
-                  kCWSecurityWPA2Enterprise: "WPA2 Enterprise",
-                  kCWSecurityWPA2Personal: "WPA2 Personal",
-                  kCWSecurityWPA3Enterprise: "WPA3 Enterprise",
-                  kCWSecurityWPA3Personal: "WPA3 Personal",
-                  kCWSecurityWPA3Transition: "WPA3 Transition (WPA3/WPA2 Personal)",
-                  kCWSecurityWPAEnterprise: "WPA Enterprise",
-                  kCWSecurityWPAEnterpriseMixed: "WPA/WPA2 Enterprise",
-                  kCWSecurityWPAPersonal: "WPA Personal",
-                  kCWSecurityWPAPersonalMixed: "WPA/WPA2 Personal Mixed"}
+                  kCWSecurityWPA2Enterprise: "WPA2",
+                  kCWSecurityWPA2Personal: "WPA2 PSK",
+                  kCWSecurityWPA3Enterprise: "WPA3",
+                  kCWSecurityWPA3Personal: "WPA3",
+                  kCWSecurityWPA3Transition: "WPA2/WPA3",
+                  kCWSecurityWPAEnterprise: "WPA",
+                  kCWSecurityWPAEnterpriseMixed: "WPA/Mix",
+                  kCWSecurityWPAPersonal: "WPA PSK",
+                  kCWSecurityWPAPersonalMixed: "WPA PSK/Mix"}
 
-NETWORK_SETUP_MAP_SECURITY_TYPES = {kCWSecurityDynamicWEP: "8021XWEP",  # This is a guess...
-                                    kCWSecurityEnterprise: "8021XWEP",  # This is a guess...
-                                    kCWSecurityNone: "OPEN",
-                                    kCWSecurityPersonal: "WPA",  # This is a guess...
-                                    kCWSecurityUnknown: "OPEN",  # networksetup defaults to open if sec type unknown
-                                    kCWSecurityWEP: "WEP",
-                                    kCWSecurityWPA2Enterprise: "WPA2E",
-                                    kCWSecurityWPA2Personal: "WPA2",
-                                    kCWSecurityWPA3Enterprise: "WPA2E",  # WPA3 is not an option for networksetup
-                                    kCWSecurityWPA3Personal: "WPA2",  # WPA3 is not an option for networksetup
-                                    kCWSecurityWPA3Transition: "WPA2",  # WPA3 is not an option for networksetup
-                                    kCWSecurityWPAEnterprise: "WPAE",
-                                    kCWSecurityWPAEnterpriseMixed: "WPAE/WPA2E",
-                                    kCWSecurityWPAPersonal: "WPA",
-                                    kCWSecurityWPAPersonalMixed: "WPA/WPA2"}
-
-SECURITY_MODES = {kCWSecurityModeDynamicWEP: "Dynamic WEP Mode",
-                  kCWSecurityModeOpen: "Open Mode",
-                  kCWSecurityModeWEP: "WEP Mode",
-                  kCWSecurityModeWPA2_Enterprise: "WPA2 Enterprise Mode",
-                  kCWSecurityModeWPA2_PSK: "WPA2 PSK Mode",
-                  kCWSecurityModeWPA_Enterprise: "WPA Enterprise Mode",
-                  kCWSecurityModeWPA_PSK: "WPA PSK Mode",
-                  kCWSecurityModeWPS: "WPS Mode"}
+SECURITY_MODES = {kCWSecurityModeDynamicWEP: "Dynamic WEP",
+                  kCWSecurityModeOpen: "Open",
+                  kCWSecurityModeWEP: "WEP",
+                  kCWSecurityModeWPA2_Enterprise: "WPA2 Enterprise",
+                  kCWSecurityModeWPA2_PSK: "WPA2 Personal",
+                  kCWSecurityModeWPA_Enterprise: "WPA Enterprise",
+                  kCWSecurityModeWPA_PSK: "WPA Personal",
+                  kCWSecurityModeWPS: "WPS"}
 
 
-@dataclass
-class InterfaceConnection:
-    aggregate_noise: Any = field(default=None)
-    aggregate_rssi: Any = field(default=None)
-    airplay_statistics: Any = field(default=None)
-    auto_content_accessing_proxy: Any = field(default=None)
-    auto_join_history: Any = field(default=None)
-    awdl_operating_mode: Any = field(default=None)
-    available_wlan_channels: Any = field(default=None)
-    bssid: Any = field(default=None)
-    busy: Any = field(default=None)
-    cached_scan_results: Any = field(default=None)
-    capabilities: Any = field(default=None)
-    caused_last_wake: Any = field(default=None)
-    channel: Any = field(default=None)
-    channel_band: Any = field(default=None)
-    configuration: Any = field(default=None)
-    country_code: Any = field(default=None)
-    device: Any = field(default=None)
-    device_attached: Any = field(default=None)
-    eapo_client: Any = field(default=None)
-    entity_name: Any = field(default=None)
-    hardware_address: Any = field(default=None)
-    interface_capabilities: Any = field(default=None)
-    interface_mode: Any = field(default=None)
-    interface_state: Any = field(default=None)
-    io_80211_controller_info: Any = field(default=None)
-    ipv4_addresses: Any = field(default=None)
-    ipv4_available: Any = field(default=None)
-    ipv4_global_setup_config: Any = field(default=None)
-    ipv4_global_setup_key: Any = field(default=None)
-    ipv4_global_state_config: Any = field(default=None)
-    ipv4_global_state_key: Any = field(default=None)
-    ipv4_primary_interface: Any = field(default=None)
-    ipv4_primary_service_id: Any = field(default=None)
-    ipv4_routable: Any = field(default=None)
-    ipv4_router: Any = field(default=None)
-    ipv4_setup_config: Any = field(default=None)
-    ipv4_state_config: Any = field(default=None)
-    ipv4_wifi_global_setup_config: Any = field(default=None)
-    ipv4_wifi_global_state_config: Any = field(default=None)
-    ipv4_wifi_setup_config: Any = field(default=None)
-    ipv4_wifi_setup_key: Any = field(default=None)
-    ipv4_wifi_state_config: Any = field(default=None)
-    ipv4_wifi_state_key: Any = field(default=None)
-    ipv6_addresses: Any = field(default=None)
-    ipv6_available: Any = field(default=None)
-    ipv6_global_setup_config: Any = field(default=None)
-    ipv6_global_setup_key: Any = field(default=None)
-    ipv6_global_state_config: Any = field(default=None)
-    ipv6_global_state_key: Any = field(default=None)
-    ipv6_primary_interface: Any = field(default=None)
-    ipv6_primary_service_id: Any = field(default=None)
-    ipv6_routable: Any = field(default=None)
-    ipv6_router: Any = field(default=None)
-    ipv6_setup_config: Any = field(default=None)
-    ipv6_state_config: Any = field(default=None)
-    ipv6_wifi_global_setup_config: Any = field(default=None)
-    ipv6_wifi_global_state_config: Any = field(default=None)
-    ipv6_wifi_setup_config: Any = field(default=None)
-    ipv6_wifi_setup_key: Any = field(default=None)
-    ipv6_wifi_state_config: Any = field(default=None)
-    ipv6_wifi_state_key: Any = field(default=None)
-    is_airplay_in_progress: Any = field(default=None)
-    join_history: Any = field(default=None)
-    last_network_joined: Any = field(default=None)
-    last_power_state: Any = field(default=None)
-    last_preferred_network_joined: Any = field(default=None)
-    last_tether_device_joined: Any = field(default=None)
-    max_nss_supported_for_ap: Any = field(default=None)
-    maximum_link_speed: Any = field(default=None)
-    monitor_mode: Any = field(default=None)
-    name: Any = field(default=None)
-    network_interface_available: Any = field(default=None)
-    network_service_ids: Any = field(default=None)
-    noise: Any = field(default=None)
-    noise_measurement: Any = field(default=None)
-    num_tx_streams: Any = field(default=None)
-    number_of_spatial_streams: Any = field(default=None)
-    observation_info: Any = field(default=None)
-    op_mode: Any = field(default=None)
-    parent_interface_name: Any = field(default=None)
-    physical_mode: Any = field(default=None)
-    physical_layer_mode: Any = field(default=None)
-    power: Any = field(default=None)
-    power_debug_info: Any = field(default=None)
-    power_save_mode_enabled: Any = field(default=None)
-    roam_history: Any = field(default=None)
-    rssi: Any = field(default=None)
-    rssi_value: Any = field(default=None)
-    security: Any = field(default=None)
-    security_mode: Any = field(default=None)
-    security_type: Any = field(default=None)
-    service_active: Any = field(default=None)
-    ssid_name: Any = field(default=None)
-    state_info: Any = field(default=None)
-    supported_ism_channels: Any = field(default=None)
-    supported_physical_layer_modes: Any = field(default=None)
-    supported_wlan_channels: Any = field(default=None)
-    supported_bsxpc_secure_coding: Any = field(default=None)
-    supported_rbsxpc_secure_coding: Any = field(default=None)
-    supports_short_gi_40mhz: Any = field(default=None)
-    transmit_power: Any = field(default=None)
-    transmit_rate: Any = field(default=None)
-    tx_rate: Any = field(default=None)
-    virtual_interface_role: Any = field(default=None)
-    wake_on_wireless_enabled: Any = field(default=None)
-    wlan_channel: Any = field(default=None)
-    zone: Any = field(default=None)
+class WirelessInterface:
+    def __init__(self, iface: CWInterface, client: CWWiFiClient) -> None:
+        self.active_physical_mode = PHYSICAL_MODES.get(o2p(iface.activePHYMode()), "Unknown")
+        self.available = iface.networkInterfaceAvailable()
+        self.hardware_address = o2p(iface.hardwareAddress())
+        self.ip_monitor = iface.ipMonitor()
+        self.last_network_joined = iface.lastNetworkJoined()
+        self.last_preferred_network_joined = iface.lastPreferredNetworkJoined()
+        self.last_tether_device_joined = iface.lastTetherDeviceJoined()
+        self.mode = INTERFACE_MODES.get((o2p(iface.interfaceMode())), "Unknown")
+        self.name = o2p(iface.interfaceName())
+        self.op_mode = OPERATING_MODES.get(o2p(iface.opMode()), "Unknown")
+        self.physical_mode = PHYSICAL_MODES.get(o2p(iface.phyMode()), "Unknown")
+        self.power = iface.power()
+        self.security_mode = SECURITY_MODES.get(o2p(iface.securityMode()), "Unknown")
+        self.service_active = iface.serviceActive()
+        self.ssid = iface.ssid()
+        self.state = INTERFACE_STATES.get(o2p(iface.interfaceState()), "Unknown")
+        self.transmit_power = o2p(iface.transmitPower())
+        self.tx_rate = o2p(iface.txRate())
+        self.wlan_channel = ChannelBand(iface.wlanChannel())
 
-    def __post_init__(self):
-        self.security = SECURITY_TYPES[self.security]
-        self.security_mode = SECURITY_MODES[self.security_mode]
+        # Items that need to init after various standard 'interface' properties
+        self.configuration = self._configuration(client=client)
+        self.ipv4_addresses = o2p(self.ip_monitor.ipv4Addresses())
+        self.ipv4_router = o2p(self.ip_monitor.ipv4Router())
+        self.ipv6_addresses = o2p(self.ip_monitor.ipv6Addresses())
+        self.ipv6_router = o2p(self.ip_monitor.ipv6Router())
+        self.mutable_configuration = self._configuration(client=client, mutable=True)
+        self.network_profiles = list(self.configuration.networkProfiles().array())
+
+    def __repr__(self):
+        attrvals = [f"{k}={v!r}" for k, v in self.__dict__.items() if not (k.startswith("_") or k.startswith("__"))]
+        return f"{type(self).__name__}({', '.join(attrvals)})"
+
+    # ------------------- Properties (as decorated functions) ---------------------------------------------------------
+    @property
+    def bssid(self) -> Optional[str]:
+        """Return the BSSID of the currently connected SSID."""
+        return airport.getinfo().bssid
+
+    @property
+    def channel(self) -> Optional[int | str]:
+        """Return the current channel number."""
+        return self.wlan_channel().channel
+
+    @property
+    def channel_band(self) -> Optional[str]:
+        """Return the current channel band, for example: '5GHz'."""
+        try:
+            return self.wlan_channel().channel_band
+        except KeyError:
+            return "Unknown"
+
+    @property
+    def channel_width(self) -> Optional[str]:
+        """Return the current channel width, for example: '40MHz'."""
+        try:
+            return self.wlan_channel().channel_width
+        except KeyError:
+            return "Unknown"
+
+    @property
+    def networksetup_security_types_map(self):
+        """Map the raw security value for all network profiles on this interface for use
+        with the 'networksetup' based re-ordering process if required."""
+        return {o2p(p.ssid()): NETWORKSETUP_SECURITY_MAP.get(o2p(p.security()), "Unknown")
+                for p in self.network_profiles}
+
+    # ------------------- "Private" Functions -------------------------------------------------------------------------
+    def _configuration(self,
+                       client: CWWiFiClient,
+                       mutable: bool = False) -> Optional[CWConfiguration | CWMutableConfiguration]:
+        """Return the current interface configuration as either an immutable or mutable configuration object.
+
+        :param mutable: boolean flag to return an immutable (False) or mutable (True) configuration object"""
+        conf = CWConfiguration if not mutable else CWMutableConfiguration
+        return conf.alloc().initWithConfiguration_(client.interface().configuration())

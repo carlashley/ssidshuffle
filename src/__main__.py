@@ -29,12 +29,14 @@ import argparse
 import sys
 
 from os import geteuid
-from ssidlib.airport import WiFiAdapter
-from ssidlib.utils import major_os_version
+# from ssidlib.airport import WiFiAdapter
+from ssidlib.corewlan import WLan
+from ssidlib.utils.pyobjc import o2p
+from ssidlib.utils.sysinfo import major_os_version
 
 
 NAME = "ssidshuffle"  # for custom arg errors
-VERSION = "1.0.20221009"
+VERSION = "1.0.20221023"
 
 
 def _print_arg_err(msg: str, parser: argparse.Namespace, returncode: int = 1) -> None:
@@ -50,12 +52,15 @@ def _print_arg_err(msg: str, parser: argparse.Namespace, returncode: int = 1) ->
 
 def _arguments() -> None:
     """Construct command line arguments."""
-    iface = WiFiAdapter().interface
-    valid_interfaces = WiFiAdapter().interfaces
+    w = WLan()
+    iface = w.interface.name
+    valid_interfaces = w.valid_interfaces
+
     parser = argparse.ArgumentParser(description=("A command line utility to quickly re-order "
                                                   "SSIDs for a specific wireless network interface."),
                                      formatter_class=argparse.RawTextHelpFormatter)
     a = parser.add_argument
+    e = parser.add_mutually_exclusive_group().add_argument
 
     a("-n", "--dry-run",
       action="store_true",
@@ -63,13 +68,13 @@ def _arguments() -> None:
       help="performs a dry run",
       required=False)
 
-    a("-l", "--list-current",
+    e("-l", "--list-current",
       action="store_true",
       dest="list_current",
       help="list current SSIDs for the interface",
       required=False)
 
-    a("-s, --ssids",
+    e("-s, --ssids",
       nargs="*",
       dest="ssids",
       metavar="[ssid]",
@@ -102,6 +107,7 @@ def _arguments() -> None:
     a("--networksetup",
       action="store_true",
       dest="use_networksetup",
+      default=major_os_version() >= 13,
       help=argparse.SUPPRESS,
       required=False)
 
@@ -124,7 +130,7 @@ def _arguments() -> None:
         _print_arg_err(msg=msg, parser=parser)
 
     if args.interface and args.interface not in valid_interfaces:
-        msg = f"{NAME}: error: the specified interface {args.interface!r} is not a valid wireless interface"
+        msg = f"{NAME}: error: {args.interface!r} is not a valid wireless interface"
 
         # Offer up interface as a hint
         if iface:
@@ -141,26 +147,44 @@ def _arguments() -> None:
         msg = f"{NAME}: error: the following arguments are required: -s, --ssids when using --networksetup"
         _print_arg_err(msg=msg, parser=parser)
 
-    return args
+    return (args, w)  # Reuse the instantiated WLan object
 
 
 def main():
     """Main"""
-    args = _arguments()
-    wifi = WiFiAdapter(iface=args.interface, dry_run=args.dry_run)
+    args, wifi = _arguments()
 
     if args.list_current:
-        wifi.print_current_ssid_order()
+        print("Current SSID order:")
+        wifi.current_ssid_order()
 
     if args.ssids:
-        wifi.reorder(new_order=args.ssids, use_networksetup=args.use_networksetup)
+        new_order = wifi.reorder(new_order=args.ssids)
+
+        # Check there are changes to make.
+        if [o2p(profile.ssid()) for profile in new_order] == [o2p(profile.ssid()) for profile in
+                                                              wifi.interface.network_profiles]:
+            print("No changes to apply to SSID order.")
+            sys.exit()
+
+        if args.dry_run:
+            print("Old SSID order:")
+            wifi.current_ssid_order()
+
+            print("New SSID order:")
+
+            for profile in new_order:
+                index = new_order.index(profile)
+                print(f" {index}: {profile.ssid()!r}")
+        else:
+            wifi.commit(new_order=new_order, use_networksetup=args.use_networksetup)
 
     if args.power_cycle:
         if not args.dry_run:
-            print(f"Power cycling wireless interface {wifi.interface!r}")
+            print(f"Power cycling wireless interface {wifi.interface.name!r}")
             wifi.power_cycle()
         else:
-            print(f"Would power cycle wireless interface {wifi.interface!r}")
+            print(f"Would power cycle wireless interface {wifi.interface.name!r}")
 
 
 if __name__ == "__main__":
